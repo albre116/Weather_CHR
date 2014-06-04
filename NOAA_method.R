@@ -1,6 +1,7 @@
 library(devtools)
 library(rnoaa)
 library(ggmap)
+library(ggplot2)
 options(noaakey = "QDqOpowUVBqxuNYLygxnxXXjxFOqaJuy") ###Mark Albrecht NOAA Key
 
 
@@ -61,6 +62,48 @@ TMP<-noaa(datasetid='NORMAL_DLY', stationid =chosen[[i]]$id, startdate = '2010-0
 DAILY_NORMAL<-rbind(DAILY_NORMAL,TMP$data)
 }
 
-DAILY
-DAILY_NORMAL
+
+
+#DAILY
+#DAILY_NORMAL
+
+####construct averages using tapply
+AVG_DATA<-DAILY[DAILY$datatype %in% c("TMIN","TMAX"),]
+id<-as.factor(paste(AVG_DATA$station,AVG_DATA$date,sep="~"))
+AVG<-tapply(AVG_DATA$value,id,mean)
+NAMES<-as.data.frame(strsplit(names(AVG),"~"))
+NAMES<-data.frame(t(NAMES))
+rownames(AVG)<-NULL
+rownames(NAMES)<-NULL
+
+
+####combine all data into 1 stacked data frame
+AVG<-data.frame(AVG)
+#colnames(AVG)<-colnames(DAILY)[2]
+#colnames(NAMES)<-colnames(DAILY)[c(1,4)]
+AVG<-data.frame("station"=NAMES[1],"value"=AVG,"datatype"="TAVG","date"=NAMES[2],stringsAsFactors=FALSE)
+AVG$date<-as.character(AVG$date)
+ALL<-rbind(DAILY[,1:4],AVG,DAILY_NORMAL[,1:4])
+ALL$date<-as.Date(ALL$date)
+summary(ALL)
+###Convert Measurements to Degrees, not Degrees * 10
+idx<-ALL$datatype %in% c("TAVG","TMAX","TMIN","DLY-TAVG-NORMAL")
+ALL$value[idx]<-ALL$value[idx]/10 ###get rid of extra 10 multiplier
+####Convert Celsius measures to Farenheight
+idx<-ALL$datatype %in% c("TAVG","TMAX","TMIN")
+ALL$value[idx]<-ALL$value[idx]*(9/5)+32###C to F conversion
+
+
+
+theGraph <- ggplot(ALL,aes(x=date, y=value)) + 
+  geom_point(size = 1) + facet_wrap(~station+datatype, scales = "free") + 
+  xlab("Date") + ylab(NULL) + ggtitle("Raw Data")
+print(theGraph)
+
+
+
+
+
+
+
 
