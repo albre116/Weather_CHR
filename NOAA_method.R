@@ -122,13 +122,25 @@ ALL<-rbind(ALL,REPLACE_NORMAL)###replace the dropped averages
 
 
 ##########compute series that is the difference from the normal for TAVG
+DIFFERENCE_NORMAL<-data.frame()
+for (i in unique(ALL$station)){
+  norm_idx<- ALL$datatype=="DLY-TAVG-NORMAL"
+  avg_idx<-ALL$datatype=="TAVG"
+  station_idx<-ALL$station==i
+  NORMAL<-ALL[norm_idx & station_idx,]
+  STATION_AVG<-ALL[avg_idx & station_idx,]
+  DIFFERENCE<-STATION_AVG
+  DIFFERENCE$value=NA
+  DIFFERENCE$datatype="DIFF-TAVG-NORMAL"
+  for (j in 1:nrow(DIFFERENCE)){
+    DIFFERENCE$value[j]=STATION_AVG$value[j]-NORMAL$value[j]
+  }
+  
+  DIFFERENCE_NORMAL<-rbind(DIFFERENCE_NORMAL,DIFFERENCE)
+  
+}
 
-
-
-
-
-
-
+ALL<-rbind(ALL,DIFFERENCE_NORMAL)###replace the dropped averages
 
 #########################################
 
