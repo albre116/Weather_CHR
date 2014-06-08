@@ -79,8 +79,8 @@ rownames(NAMES)<-NULL
 
 ####combine all data into 1 stacked data frame
 AVG<-data.frame(AVG)
-#colnames(AVG)<-colnames(DAILY)[2]
-#colnames(NAMES)<-colnames(DAILY)[c(1,4)]
+colnames(AVG)<-colnames(DAILY)[2]
+colnames(NAMES)<-colnames(DAILY)[c(1,4)]
 AVG<-data.frame("station"=NAMES[1],"value"=AVG,"datatype"="TAVG","date"=NAMES[2],stringsAsFactors=FALSE)
 AVG$date<-as.character(AVG$date)
 ALL<-rbind(DAILY[,1:4],AVG,DAILY_NORMAL[,1:4])
@@ -94,6 +94,43 @@ idx<-ALL$datatype %in% c("TAVG","TMAX","TMIN")
 ALL$value[idx]<-ALL$value[idx]*(9/5)+32###C to F conversion
 
 
+###construct normals that span the entire data range
+REPLACE_NORMAL<-data.frame()
+for (i in unique(ALL$station)){
+  norm_idx<- ALL$datatype=="DLY-TAVG-NORMAL"
+  avg_idx<-ALL$datatype=="TAVG"
+  station_idx<-ALL$station==i
+  NORMAL<-ALL[norm_idx & station_idx,]
+  STATION_AVG<-ALL[avg_idx & station_idx,]
+  NORMAL_REP<-STATION_AVG
+  NORMAL_REP$value=NA
+  NORMAL_REP$datatype="DLY-TAVG-NORMAL"
+  stripped_date<-format(NORMAL$date,"%m-%d")
+  j=1
+  for (j in 1:nrow(NORMAL_REP)){
+    current_date<-format(NORMAL_REP$date[j],"%m-%d")
+    if (current_date=="02-29"){current_date="02-28"}###deal with leap yr
+    NORMAL_REP$value[j]<-NORMAL$value[stripped_date %in% current_date]
+  }
+
+  REPLACE_NORMAL<-rbind(REPLACE_NORMAL,NORMAL_REP)
+  
+}
+
+ALL<-ALL[ALL$datatype !="DLY-TAVG-NORMAL",]###drop the 1 year averages
+ALL<-rbind(ALL,REPLACE_NORMAL)###replace the dropped averages
+
+
+##########compute series that is the difference from the normal for TAVG
+
+
+
+
+
+
+
+
+#########################################
 
 theGraph <- ggplot(ALL,aes(x=date, y=value)) + 
   geom_point(size = 1) + facet_wrap(~station+datatype, scales = "free") + 
