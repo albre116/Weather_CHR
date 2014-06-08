@@ -5,7 +5,6 @@ library(ggplot2)
 options(noaakey = "QDqOpowUVBqxuNYLygxnxXXjxFOqaJuy") ###Mark Albrecht NOAA Key
 
 
-
 #####find weather stations meeting the recording requirements######
 address<-c("Bakersfield CA","NEW YORK")###to be geocoded through googlemaps
 geocode_result<-geocode(address, output="all")###geocode through googlemaps
@@ -23,14 +22,30 @@ idx<-station_daily[[i]]$data$id %in% station_normals[[i]]$data$id
 station_both_data[[i]]<-station_daily[[i]]$data[idx,]
 }
 
+############################################
 ###select best weather station (for now with highest data coverage)###
-i=1
 chosen<-list()
 for (i in 1:length(station_both_data)){
   chosen[[i]]<-station_both_data[[i]][which.max(station_both_data[[i]]$datacoverage),]
 }
 
+#############plot weather station options###########
+map<-list()
+i=1
+for (i in 1:length(station_both_data)){
+center<-c(geocode_result[i][[1]]$results[[1]]$geometry$location$lng,geocode_result[i][[1]]$results[[1]]$geometry$location$lat)
+stations<-data.frame(x=station_both_data[[i]]$longitude,y=station_both_data[[i]]$latitude)
+map[[i]]<-get_googlemap(center,markers=stations,zoom=10)
+map[[i]]<-ggmap(map[[i]])
+map[[i]]<-map[[i]]+geom_point(aes(x=longitude,y=latitude),data=chosen[[i]],size=10,shape=18)
+  
+print(map[[i]])
 
+}
+
+
+
+####Get Weather Data from API###
 i=1
 DAILY<-data.frame();DAILY_NORMAL<-data.frame()
 for (i in 1:length(chosen)){
