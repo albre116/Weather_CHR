@@ -34,11 +34,11 @@ map<-list()
 i=1
 for (i in 1:length(station_both_data)){
 center<-c(geocode_result[i][[1]]$results[[1]]$geometry$location$lng,geocode_result[i][[1]]$results[[1]]$geometry$location$lat)
-stations<-data.frame(x=station_both_data[[i]]$longitude,y=station_both_data[[i]]$latitude)
-map[[i]]<-get_googlemap(center,markers=stations,zoom=10)
+stations<-data.frame(x=station_both_data[[i]]$longitude,y=station_both_data[[i]]$latitude,type="Avaliable Weather Stations",stringsAsFactors=F)
+stations$type[station_both_data[[i]]$id==chosen[[i]]$id]="Selected Weather Station"
+map[[i]]<-get_googlemap(center,zoom=10)
 map[[i]]<-ggmap(map[[i]])
-map[[i]]<-map[[i]]+geom_point(aes(x=longitude,y=latitude),data=chosen[[i]],size=10,shape=18)
-  
+map[[i]]<-map[[i]]+geom_point(aes(x=x,y=y,shape=type),data=stations,size=5)+theme(legend.position="top")
 print(map[[i]])
 
 }
